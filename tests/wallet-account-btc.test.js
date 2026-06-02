@@ -162,6 +162,17 @@ describe.each([44, 84])(`WalletAccountBtc`, (bip) => {
 
       expect(recipientOutput.value).toBe(TRANSACTION.value)
     })
+
+    test('should throw if transaction fee exceeds the transaction max fee configuration', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const account = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: 0 })
+
+      await expect(account.signTransaction(TRANSACTION))
+        .rejects.toThrow('Exceeded maximum fee cost for transaction operation.')
+
+      account.dispose()
+    })
   })
 
   describe('sendTransaction', () => {
@@ -305,6 +316,17 @@ describe.each([44, 84])(`WalletAccountBtc`, (bip) => {
       expect(outputs).toContain(recipient)
       expect(outputs).not.toContain(address)
       expect(fee).toBe(balance - spend)
+
+      account.dispose()
+    })
+
+    test('should throw if transaction fee exceeds the transaction max fee configuration', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const account = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: 0 })
+
+      await expect(account.sendTransaction(TRANSACTION))
+        .rejects.toThrow('Exceeded maximum fee cost for transaction operation.')
 
       account.dispose()
     })

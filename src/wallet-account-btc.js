@@ -207,6 +207,11 @@ export default class WalletAccountBtc extends WalletAccountReadOnlyBtc {
    */
   async signTransaction ({ to, value, feeRate, confirmationTarget = 1 }) {
     const { tx } = await this._buildSignedTransaction({ to, value, feeRate, confirmationTarget })
+
+    if (this._config.transactionMaxFee !== undefined && tx.fee >= this._config.transactionMaxFee) {
+      throw new Error('Exceeded maximum fee cost for transaction operation.')
+    }
+
     return tx.hex
   }
 
@@ -219,6 +224,10 @@ export default class WalletAccountBtc extends WalletAccountReadOnlyBtc {
    */
   async sendTransaction ({ to, value, feeRate, confirmationTarget = 1 }, timeoutMs = 10000) {
     const { tx, utxos } = await this._buildSignedTransaction({ to, value, feeRate, confirmationTarget })
+
+    if (this._config.transactionMaxFee !== undefined && tx.fee >= this._config.transactionMaxFee) {
+      throw new Error('Exceeded maximum fee cost for transaction operation.')
+    }
 
     const address = await this.getAddress()
     let retries = Math.ceil(timeoutMs / POLLING_INTERVAL)
