@@ -173,6 +173,34 @@ describe.each([44, 84])(`WalletAccountBtc`, (bip) => {
 
       account.dispose()
     })
+
+    test('should allow a fee exactly equal to transactionMaxFee', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const { fee } = await account.quoteSendTransaction(TRANSACTION)
+
+      const accountAtLimit = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: fee })
+
+      const signedTx = await accountAtLimit.signTransaction(TRANSACTION)
+
+      expect(signedTx).toBeTruthy()
+
+      accountAtLimit.dispose()
+    })
+
+    test('should allow a fee below transactionMaxFee', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const { fee } = await account.quoteSendTransaction(TRANSACTION)
+
+      const accountBelowLimit = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: fee + 1n })
+
+      const signedTx = await accountBelowLimit.signTransaction(TRANSACTION)
+
+      expect(signedTx).toBeTruthy()
+
+      accountBelowLimit.dispose()
+    })
   })
 
   describe('sendTransaction', () => {
@@ -329,6 +357,38 @@ describe.each([44, 84])(`WalletAccountBtc`, (bip) => {
         .rejects.toThrow('Exceeded maximum fee cost for transaction operation.')
 
       account.dispose()
+    })
+
+    test('should allow a fee exactly equal to transactionMaxFee', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const { fee } = await account.quoteSendTransaction(TRANSACTION)
+
+      const accountAtLimit = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: fee })
+
+      const { hash } = await accountAtLimit.sendTransaction(TRANSACTION)
+
+      await waiter.mine()
+
+      expect(hash).toBeTruthy()
+
+      accountAtLimit.dispose()
+    })
+
+    test('should allow a fee below transactionMaxFee', async () => {
+      const TRANSACTION = { to: recipient, value: 1_000, feeRate: 1 }
+
+      const { fee } = await account.quoteSendTransaction(TRANSACTION)
+
+      const accountBelowLimit = new WalletAccountBtc(SEED_PHRASE, "0'/0/0", { ...CONFIGURATION, transactionMaxFee: fee + 1n })
+
+      const { hash } = await accountBelowLimit.sendTransaction(TRANSACTION)
+
+      await waiter.mine()
+
+      expect(hash).toBeTruthy()
+
+      accountBelowLimit.dispose()
     })
 
     test('should throw if value is less than the dust limit', async () => {
